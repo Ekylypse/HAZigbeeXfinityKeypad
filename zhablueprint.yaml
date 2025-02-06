@@ -5,10 +5,11 @@ blueprint:
 
   input:
     dev_id:
-      name: Keypad Device ID
+      name: Keypad Device
       description: "The Keypad device ID"
       selector:
-        text:
+        entity:
+          domain: alarm_control_panel
     dev_ieee:
       name: Keypad Device IEEE
       description: "The Keypad device IEEE"
@@ -139,7 +140,7 @@ action:
             domain: alarm_control_panel
             entity_id: !input entity
             type: disarm
-            code: "00000"
+            code: "0000"
           - service: notify.notify
             data:
               message: clear_notification
@@ -159,7 +160,7 @@ action:
             domain: alarm_control_panel
             entity_id: !input entity
             type: arm_home
-            code: "00000"
+            code: "0000"
           - service: notify.notify
             data:
               message: clear_notification
@@ -179,7 +180,7 @@ action:
             domain: alarm_control_panel
             entity_id: !input entity
             type: arm_away
-            code: "00000"
+            code: "0000"
           - service: notify.notify
             data:
               message: clear_notification
@@ -199,7 +200,7 @@ action:
             domain: alarm_control_panel
             entity_id: !input entity
             type: arm_night
-            code: "00000"
+            code: "0000"
           - service: notify.notify
             data:
               message: clear_notification
