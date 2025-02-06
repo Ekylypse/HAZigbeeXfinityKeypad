@@ -1,0 +1,395 @@
+blueprint:
+  name: Alarmo Keypad Sync bt Ekylypse
+  description: Keypad sync with Alarmo
+  domain: automation
+
+  input:
+    state_topic:
+      name: MQTT State Topic of your Keypad
+      description: "The State Topic is composed of your base_topic (see your Z2M Addon Configuration) and the Friendly Name of your keypad in Z2M. Example: zigbee2mqtt/Keypad"
+      selector:
+        text:
+    set_topic:
+      name: MQTT Set Topic of your Keypad
+      description: "This is the same as your State Topic, with the addition of /set. Example: zigbee2mqtt/Keypad/set"
+      selector:
+        text:
+    entity:
+      name: Alarmo entity
+      description: "An alarm control panel entity from alarmo."
+      selector:
+        entity:
+          domain: alarm_control_panel
+          integration: alarmo
+
+triggers:
+  - entity_id: !input entity
+    to: armed_night
+    id: to_state_armed_night
+    trigger: state
+  - entity_id: !input entity
+    to: disarmed
+    id: to_state_disarmed
+    trigger: state
+  - entity_id: !input entity
+    to: armed_home
+    id: to_state_armed_home
+    trigger: state
+  - entity_id: !input entity
+    to: armed_away
+    id: to_state_armed_away
+    trigger: state
+  - entity_id: !input entity
+    to: arming
+    id: to_state_arming
+    trigger: state
+  - entity_id: !input entity
+    to: pending
+    id: to_state_pending
+    trigger: state
+  - entity_id: !input entity
+    to: triggered
+    id: to_state_triggered
+    trigger: state
+  - topic: !input state_topic
+    id: keypad_command
+    trigger: mqtt
+  - event_type: alarmo_failed_to_arm
+    id: event_arm_failure
+    trigger: event
+  - event_type: alarmo_command_success
+    id: event_command_success
+    trigger: event
+conditions: []
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: to_state_disarmed
+        sequence:
+          - data_template:
+              topic: !input set_topic
+              payload: |-
+                {
+                  "arm_mode": 
+                  {
+                    "mode": "disarm"
+                  }
+                }
+            action: mqtt.publish
+      - conditions:
+          - condition: trigger
+            id: to_state_armed_home
+        sequence:
+          - data_template:
+              topic: !input set_topic
+              payload: |-
+                {
+                  "arm_mode": 
+                  {
+                    "mode": "arm_day_zones"
+                  }
+                }
+            action: mqtt.publish
+      - conditions:
+          - condition: trigger
+            id: to_state_armed_night
+        sequence:
+          - data_template:
+              topic: !input set_topic
+              payload: |-
+                {
+                  "arm_mode": 
+                  {
+                    "mode": "arm_night_zones"
+                  }
+                }
+            action: mqtt.publish
+      - conditions:
+          - condition: trigger
+            id: to_state_armed_away
+        sequence:
+          - data_template:
+              topic: !input set_topic
+              payload: |-
+                {
+                  "arm_mode": 
+                  {
+                    "mode": "arm_all_zones"
+                  }
+                }
+            action: mqtt.publish
+      - conditions:
+          - condition: trigger
+            id: to_state_arming
+        sequence:
+          - data_template:
+              topic: !input set_topic
+              payload: |-
+                {
+                  "arm_mode": 
+                  {
+                    "mode": "exit_delay"
+                  }
+                }
+            action: mqtt.publish
+      - conditions:
+          - condition: trigger
+            id: to_state_pending
+        sequence:
+          - data_template:
+              topic: !input set_topic
+              payload: |-
+                {
+                  "arm_mode": 
+                  {
+                    "mode": "entry_delay"
+                  }
+                }
+            action: mqtt.publish
+      - conditions:
+          - condition: trigger
+            id: to_state_triggered
+        sequence:
+          - data_template:
+              topic: !input set_topic
+              payload: |-
+                {
+                  "arm_mode": 
+                  {
+                    "mode": "in_alarm"
+                  }
+                }
+            action: mqtt.publish
+      - conditions:
+          - condition: trigger
+            id: keypad_command
+            enabled: true
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.payload_json.action == \"disarm\" }}"
+                sequence:
+                  - action: mqtt.publish
+                    metadata: {}
+                    data:
+                      topic: alarmo/command
+                      payload: >-
+                        {"command":"DISARM","code":"{{
+                        trigger.payload_json.action_code }}"}
+                      evaluate_payload: false
+                    enabled: true
+                alias: Disarm
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.payload_json.action == \"arm_all_zones\"  }}"
+                sequence:
+                  - action: mqtt.publish
+                    metadata: {}
+                    data:
+                      topic: alarmo/command
+                      payload: >-
+                        {"command":"ARM_AWAY","code":"{{
+                        trigger.payload_json.action_code }}"}
+                      evaluate_payload: false
+                    enabled: true
+                alias: ArmAway
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.payload_json.action == 'arm_day_zones' }}"
+                sequence:
+                  - action: mqtt.publish
+                    metadata: {}
+                    data:
+                      topic: alarmo/command
+                      payload: >-
+                        {"command":"ARM_HOME","code":"{{
+                        trigger.payload_json.action_code }}"}
+                      evaluate_payload: false
+                    enabled: true
+                alias: ArmHome
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.payload_json.action == \"arm_night_zones\" }}"
+                sequence:
+                  - action: mqtt.publish
+                    metadata: {}
+                    data:
+                      topic: alarmo/command
+                      payload: >-
+                        {"command":"ARM_NIGHT","code":"{{
+                        trigger.payload_json.action_code }}"}
+                      evaluate_payload: false
+                    enabled: true
+                alias: ArmNight
+            enabled: true
+      - conditions:
+          - condition: trigger
+            id: event_arm_failure
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.event.data.reason == 'invalid_code' }}"
+                sequence:
+                  - data_template:
+                      topic: !input set_topic
+                      payload: |-
+                        {
+                          "arm_mode": 
+                          {
+                            "transaction": {{ trigger.event.data.context_id }},
+                            "mode": "invalid_code"
+                          }
+                        }
+                    action: mqtt.publish
+                  - alias: Send a notification to each device
+                    repeat:
+                      for_each: []
+                      sequence:
+                        - data:
+                            title: Alarmo error
+                            message: Invalid code
+                            data:
+                              sticky: "true"
+                          action: >-
+                            notify.mobile_app_{{ device_attr(repeat.item,
+                            'name')| slugify }}
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.event.data.reason == 'open_sensors' }}"
+                sequence:
+                  - data_template:
+                      topic: !input set_topic
+                      payload: |-
+                        {
+                          "arm_mode": 
+                          {
+                            "transaction": {{ trigger.event.data.context_id }},
+                            "mode": "not_ready"
+                          }
+                        }
+                    action: mqtt.publish
+                  - alias: Send a notification to each device
+                    repeat:
+                      for_each: []
+                      sequence:
+                        - data:
+                            title: Alarmo error
+                            message: Not ready (possible open sensors)
+                            data:
+                              sticky: "true"
+                          action: >-
+                            notify.mobile_app_{{ device_attr(repeat.item,
+                            'name')| slugify }}
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.event.data.reason == 'not_allowed' }}"
+                  - condition: template
+                    value_template: "{{ trigger.event.data.command|lower == 'disarm' }}"
+                sequence:
+                  - data_template:
+                      topic: !input set_topic
+                      payload: |-
+                        {
+                          "arm_mode": 
+                          {
+                            "transaction": {{ trigger.event.data.context_id }},
+                            "mode": "already_disarmed"
+                          }
+                        }
+                    action: mqtt.publish
+                  - alias: Send a notification to each device
+                    repeat:
+                      for_each: []
+                      sequence:
+                        - data:
+                            title: Alarmo error
+                            message: Already disarmed
+                            data:
+                              sticky: "true"
+                          action: >-
+                            notify.mobile_app_{{ device_attr(repeat.item,
+                            'name')| slugify }}
+      - conditions:
+          - condition: trigger
+            id: event_command_success
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.event.data.action == 'arm' }}"
+                  - condition: template
+                    value_template: "{{ trigger.event.data.context_id != null }}"
+                  - condition: template
+                    value_template: "{{ trigger.event.data.mode == 'away' }}"
+                sequence:
+                  - data_template:
+                      topic: !input set_topic
+                      payload: |-
+                        {
+                          "arm_mode": 
+                          {
+                            "transaction": {{ trigger.event.data.context_id }},
+                            "mode": "arm_all_zones"
+                          }
+                        }
+                    action: mqtt.publish
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.event.data.action == 'arm' }}"
+                  - condition: template
+                    value_template: "{{ trigger.event.data.context_id != null }}"
+                  - condition: template
+                    value_template: "{{ trigger.event.data.mode == 'home' }}"
+                sequence:
+                  - data_template:
+                      topic: !input set_topic
+                      payload: |-
+                        {
+                          "arm_mode": 
+                          {
+                            "transaction": {{ trigger.event.data.context_id }},
+                            "mode": "arm_day_zones"
+                          }
+                        }
+                    action: mqtt.publish
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.event.data.action == 'arm' }}"
+                  - condition: template
+                    value_template: "{{ trigger.event.data.context_id != null }}"
+                  - condition: template
+                    value_template: "{{ trigger.event.data.mode == 'night' }}"
+                sequence:
+                  - data_template:
+                      topic: !input set_topic
+                      payload: |-
+                        {
+                          "arm_mode": 
+                          {
+                            "transaction": {{ trigger.event.data.context_id }},
+                            "mode": "arm_night_zones"
+                          }
+                        }
+                    action: mqtt.publish
+              - conditions:
+                  - condition: template
+                    value_template: "{{ trigger.event.data.action == 'disarm' }}"
+                  - condition: template
+                    value_template: "{{ trigger.event.data.context_id != null }}"
+                sequence:
+                  - data_template:
+                      topic: !input set_topic
+                      payload: |-
+                        {
+                          "arm_mode": 
+                          {
+                            "transaction": {{ trigger.event.data.context_id }},
+                            "mode": "disarm"
+                          }
+                        }
+                    action: mqtt.publish
+mode: parallel
+max: 10
