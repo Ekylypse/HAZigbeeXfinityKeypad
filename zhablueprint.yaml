@@ -4,14 +4,14 @@ blueprint:
   domain: automation
 
   input:
-    dev_ieee:
-      name: Keypad Device IEEE
-      description: "The Keypad device IEEE"
-      selector:
-        text:
     dev_id:
       name: Keypad Device ID
       description: "The Keypad device ID"
+      selector:
+        text:
+    dev_ieee:
+      name: Keypad Device IEEE
+      description: "The Keypad device IEEE"
       selector:
         text:
 
