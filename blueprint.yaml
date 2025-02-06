@@ -6,12 +6,12 @@ blueprint:
   input:
     state_topic:
       name: MQTT State Topic of your Keypad
-      description: "The State Topic is composed of your base_topic (see your Z2M Addon Configuration) and the Friendly Name of your keypad in Z2M. Example: zigbee2mqtt/Keypad or zha/Keypad"
+      description: "The State Topic is composed of your base_topic (see your Z2M Addon Configuration) and the Friendly Name of your keypad in Z2M. Example: zigbee2mqtt/Keypad"
       selector:
         text:
     set_topic:
       name: MQTT Set Topic of your Keypad
-      description: "This is the same as your State Topic, with the addition of /set. Example: zigbee2mqtt/Keypad/set or zha/Keypad"
+      description: "This is the same as your State Topic, with the addition of /set. Example: zigbee2mqtt/Keypad/set"
       selector:
         text:
     entity:
