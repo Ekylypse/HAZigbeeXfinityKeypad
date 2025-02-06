@@ -20,7 +20,6 @@ blueprint:
       selector:
         entity:
           domain: alarm_control_panel
-          integration: alarmo
 trigger:
   - platform: event
     event_type: zha_event
