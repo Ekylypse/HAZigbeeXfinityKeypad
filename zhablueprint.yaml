@@ -9,7 +9,6 @@ blueprint:
       description: "The Keypad device IEEE"
       selector:
         text:
-  input:
     dev_id:
       name: Keypad Device ID
       description: "The Keypad device ID"
