@@ -1,7 +1,7 @@
 blueprint:
   name: Xfinity Keypad & Alarmo ZHA by Ekylypse
   description: |
-    Modded by Ekylypse from "Keypad Frient (KEPZB-110) for Alarmo by Darktoinon"
+	Modded by Ekylypse from "Keypad Frient (KEPZB-110) for Alarmo by Darktoinon"
     Manage multiple PIN codes to arm and disarm an alarm using the Xfinity Keypad, synchronizing the state with an Alarmo central or other systems.
     You will need to create the same PIN codes in Alarmo.
   domain: automation
@@ -28,6 +28,13 @@ blueprint:
       selector:
         entity:
           domain: alarm_control_panel
+    arm_pin:
+      name: Require pin to arm
+      description: |
+        true/false
+      default: ""
+      selector:
+        text: {}
     pin_list:
       name: Valid PIN Codes
       description: |
