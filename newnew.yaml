@@ -27,8 +27,7 @@ blueprint:
           domain: alarm_control_panel
     arm_pin:
       name: Alarmo requires PIN to Arm?
-      description: |
-	If true, Alarmo requires valid PIN to arm.If false, any pin will arm Alarmo.
+      description: If true, Alarmo requires valid PIN to arm.If false, any pin will arm Alarmo.
       selector:
 	boolean:
     pin_list:
