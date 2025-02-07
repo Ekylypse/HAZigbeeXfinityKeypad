@@ -1,0 +1,241 @@
+blueprint:
+  name: Xfinity Keypad & Alarmo ZHA by Ekylypse
+  description: |
+	  Modded by Ekylypse from "Keypad Frient (KEPZB-110) for Alarmo by Darktoinon"
+    Manage multiple PIN codes to arm and disarm an alarm using the Xfinity Keypad, synchronizing the state with an Alarmo central or other systems.
+    You will need to create the same PIN codes in Alarmo.
+  domain: automation
+  input:
+    keypad:
+      name: xfinity Keypad
+      description: |
+        The xfinity keypad in use.
+      selector:
+        device:
+          integration: zha
+    alarm_panel:
+      name: Alarm Panel
+      description: |
+        The Xfinity alarm panel to control.
+      selector:
+        entity:
+          domain: alarm_control_panel
+    mirror_alarm_panel:
+      name: Alarm Panel to Mirror
+      description: |
+        The alarm panel to sync with Keypad (e.g., Alarmo).
+      default: alarm_control_panel.alarmo
+      selector:
+        entity:
+          domain: alarm_control_panel
+    arm_pin:
+      name: Require pin to arm
+      description: |
+        true/false
+      default: ""
+      selector:
+        text: {}
+    pin_list:
+      name: Valid PIN Codes
+      description: |
+        List of valid PIN codes for arming/disarming, separated by semicolons (;). These need to be valid PIN codes in Alarmo!
+      default: ""
+      selector:
+        text: {}
+    default_pin:
+      name: Default PIN Code for Alarms
+      description: |
+        The default PIN code to use for syncing arming/disarming both alarms(Use 5 digits).
+      default: ""
+      selector:
+        text: {}
+
+triggers:
+  - event_type: zha_event
+    event_data:
+      device_id: !input keypad
+      command: arm
+    id: keypad_event
+    trigger: event
+  - entity_id: !input mirror_alarm_panel
+    id: alarmo_state_change
+    trigger: state
+conditions: []
+actions:
+  - if:
+      - condition: template
+        value_template: >
+          {% if trigger.event.data.args.code in pin_list and 'true' in
+          pin_to_arm %}
+
+          {{ 1 == 1 }}
+
+          {% elif 'false' in pin_to_arm %}
+
+          {{ 1 == 1 }}
+
+          {% endif %}
+        enabled: true
+    then:
+      - choose:
+          - conditions:
+              - condition: trigger
+                id: keypad_event
+              - condition: template
+                value_template: "{{ trigger.event.data.command == 'arm' }}"
+            sequence:
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: >-
+                          {{ trigger.event.data.args.arm_mode == 0 and
+                          trigger.event.data.args.code in pin_list }}
+                      - condition: state
+                        entity_id: !input alarm_panel
+                        state:
+                          - armed_home
+                          - armed_away
+                          - armed_night
+                          - triggered
+                    sequence:
+                      - target:
+                          entity_id: !input alarm_panel
+                        data:
+                          code: "!input default_pin"
+                        action: alarm_control_panel.alarm_disarm
+                      - target:
+                          entity_id: !input mirror_alarm_panel
+                        data:
+                          code: >-
+                            {{ trigger.event.data.args.code if
+                            trigger.event.data.args.code != '' else
+                            default_pin }}
+                        action: alarm_control_panel.alarm_disarm
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ trigger.event.data.args.arm_mode == 1 }}"
+                    sequence:
+                      - target:
+                          entity_id: !input mirror_alarm_panel
+                        data:
+                          code: >-
+                            {{ trigger.event.data.args.code if
+                            trigger.event.data.args.code != '' else
+                            default_pin }}
+                        action: alarm_control_panel.alarm_arm_home
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ trigger.event.data.args.arm_mode == 2 }}"
+                    sequence:
+                      - target:
+                          entity_id: !input mirror_alarm_panel
+                        data:
+                          code: >-
+                            {{ trigger.event.data.args.code if
+                            trigger.event.data.args.code != '' else
+                            default_pin }}
+                        action: alarm_control_panel.alarm_arm_night
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ trigger.event.data.args.arm_mode == 3 }}"
+                    sequence:
+                      - target:
+                          entity_id: !input mirror_alarm_panel
+                        data:
+                          code: >-
+                            {{ trigger.event.data.args.code if
+                            trigger.event.data.args.code != '' else
+                            default_pin }}
+                        action: alarm_control_panel.alarm_arm_away
+          - conditions:
+              - condition: trigger
+                id: alarmo_state_change
+            sequence:
+              - choose:
+                  - conditions:
+                      - condition: state
+                        entity_id: !input mirror_alarm_panel
+                        state: disarmed
+                    sequence:
+                      - target:
+                          entity_id: !input alarm_panel
+                        data:
+                          code: "!input default_pin"
+                        action: alarm_control_panel.alarm_disarm
+                  - conditions:
+                      - condition: state
+                        entity_id: !input mirror_alarm_panel
+                        state: armed_home
+                    sequence:
+                      - target:
+                          entity_id: !input alarm_panel
+                        data:
+                          code: "!input default_pin"
+                        action: alarm_control_panel.alarm_arm_home
+                  - conditions:
+                      - condition: state
+                        entity_id: !input mirror_alarm_panel
+                        state: armed_night
+                    sequence:
+                      - target:
+                          entity_id: !input alarm_panel
+                        data:
+                          code: "!input default_pin"
+                        action: alarm_control_panel.alarm_arm_night
+                  - conditions:
+                      - condition: state
+                        entity_id: !input mirror_alarm_panel
+                        state: armed_away
+                    sequence:
+                      - target:
+                          entity_id: !input alarm_panel
+                        data:
+                          code: "!input default_pin"
+                        action: alarm_control_panel.alarm_arm_away
+                  - conditions:
+                      - condition: state
+                        entity_id: !input mirror_alarm_panel
+                        state: triggered
+                    sequence:
+                      - target:
+                          entity_id: !input alarm_panel
+                        action: alarm_control_panel.alarm_trigger
+                        data: {}
+        default: []
+  - if:
+      - condition: trigger
+        id:
+          - keypad_event
+    then:
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 5
+          milliseconds: 0
+      - if:
+          - condition: device
+            device_id: f754a843be983b3ce66b1c0d03bbd7e1
+            domain: alarm_control_panel
+            entity_id: 89cec5a1291de8810b185d89be478180
+            type: is_disarmed
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input alarm_panel
+                state: disarmed
+        then:
+          - action: alarm_control_panel.alarm_disarm
+            metadata: {}
+            data: {}
+            target:
+              device_id: !input keypad
+variables:
+  pin_list: !input pin_list
+  default_pin: !input default_pin
+  pin_to_arm: !input arm_pin
+# Translation for English and French messages
+  text_arm_home: "Arm Home"
+  text_arm_night: "Arm Night"
+  text_arm_away: "Arm Away"
+  text_disarm: "Disarm"
+mode: single
