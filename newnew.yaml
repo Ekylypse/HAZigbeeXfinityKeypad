@@ -1,6 +1,6 @@
 blueprint:
   name: Xfinity Keypad & Alarmo ZHA by Ekylypse
-  description: Modded by Ekylypse from Keypad Frient (KEPZB-110) for Alarmo by Darktoinon
+  description: Modded by Ekylypse from Darktoinon ZHA Alarm Sync
   domain: automation
   input:
     keypad:
@@ -26,12 +26,12 @@ blueprint:
         entity:
           domain: alarm_control_panel
     arm_pin:
-      name: Require pin to arm
+      name: Alarmo requires PIN to Arm?
       description: |
-        true/false
-      default: ""
-      selector:
-        text: {}
+        If true, Alarmo requires valid PIN to arm. If false, any pin will arm Alarmo.
+    default: true
+    selector:
+      boolean:
     pin_list:
       name: Valid PIN Codes
       description: |
@@ -210,11 +210,9 @@ actions:
           seconds: 5
           milliseconds: 0
       - if:
-          - condition: device
-            device_id: f754a843be983b3ce66b1c0d03bbd7e1
-            domain: alarm_control_panel
-            entity_id: 89cec5a1291de8810b185d89be478180
-            type: is_disarmed
+          - condition: state
+            entity_id: !input mirror_alarm_panel
+            state: disarmed
           - condition: not
             conditions:
               - condition: state
