@@ -63,11 +63,8 @@ trigger:
     id: alarmo_state_change
 
 variables:
-  language: !input language
   pin_list_var: !input pin_list
   pin_list: "{{ pin_list_var.split(';') }}"
-  rfid_list_var: !input rfid_list
-  rfid_list: "{{ rfid_list_var.split(';') }}"
   mirror_default_pin: !input mirror_default_pin
 
 # Translation for English and French messages
