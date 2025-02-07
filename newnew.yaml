@@ -29,7 +29,7 @@ blueprint:
       name: Alarmo requires PIN to Arm?
       description: If true, Alarmo requires valid PIN to arm.If false, any pin will arm Alarmo.
       selector:
-	boolean:
+        boolean:
     pin_list:
       name: Valid PIN Codes
       description: |
